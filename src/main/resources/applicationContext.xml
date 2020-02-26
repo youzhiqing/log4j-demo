@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:mybatis="http://mybatis.org/schema/mybatis-spring"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+			            http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+			            http://www.springframework.org/schema/context
+			            http://www.springframework.org/schema/context/spring-context-4.2.xsd
+			            http://www.springframework.org/schema/tx
+			            http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+			            http://mybatis.org/schema/mybatis-spring 
+			            http://mybatis.org/schema/mybatis-spring.xsd ">
+    <import resource="spring-quartz.xml"/>
+	
+	<!-- 扫描com.evenmo包下面的java文件，有Spring的相关注解的类，则把这些类注册为Spring的bean -->
+    <context:component-scan base-package="com.demo"/>
+
+	 <!-- mybatis:scan会将com.evenmo.mapper包里的所有接口当作mapper配置，之后可以自动引入mapper类-->  
+    <mybatis:scan base-package="com.demo.dao"/>
+
+    <!--spring容器工具类  -->
+    <bean id="springContextHolder" class="com.demo.util.SpringContextHolder"/>
+
+    <!-- 使用PropertyOverrideConfigurer后处理器加载数据源参数 -->
+	<!-- <context:property-override location="classpath:db.properties"/> -->
+	<!-- 指定spring读取db.properties配置 -->
+    <context:property-placeholder location="classpath:db.properties"  />
+
+	<!-- 配置c3p0数据源 -->
+	<!-- 需要数据源 C3P0 -->
+    <!-- <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="${dataSource.driverClass}"></property>
+        <property name="jdbcUrl" value="${dataSource.jdbcUrl}"></property>
+        <property name="password" value="${dataSource.password}"></property>
+        <property name="user" value="${dataSource.user}"></property>
+    </bean> -->
+
+	<!-- 配置 druid 数据源 -->
+    <!--<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        &lt;!&ndash; 基本属性 url、user、password、driverClass &ndash;&gt;
+        <property name="username" value="${dataSource.user}" />
+        <property name="password" value="${dataSource.password}" />
+        <property name="driverClassName" value="${dataSource.driverClass}" />
+        <property name="url" value="${dataSource.jdbcUrl}" />
+    </bean>-->
+
+    <!--##### 数据库连接池配置 ##### -->
+    <bean id="dataSource"
+          class="com.demo.dynamicdatasource.DynamicDataSource">
+        <property name="defaultTargetDataSource" ref="postgresqlDS" /><!--设置默认数据源 -->
+        <property name="targetDataSources"><!--设置多个数据源 -->
+            <map>
+                <entry key="mysqlDataSource" value-ref="mysqlDS" />
+                <entry key="postgresqlDataSource" value-ref="postgresqlDS" />
+            </map>
+        </property>
+    </bean>
+
+
+    <!-- mysql数据源 -->
+    <bean name="mysqlDS"
+          class="com.alibaba.druid.pool.DruidDataSource" init-method="init"
+          destroy-method="close">
+        <property name="url" value="${mysql.url}" />
+        <property name="username" value="${mysql.username}" />
+        <property name="password" value="${mysql.password}" />
+        <!-- 初始化连接大小 -->
+        <property name="initialSize" value="${initialSize}" />
+        <!-- 连接池最大使用连接数量 -->
+        <property name="maxActive" value="${maxActive}" />
+        <!-- 连接池最小空闲 -->
+        <property name="minIdle" value="${minIdle}" />
+        <!-- 获取连接最大等待时间 -->
+        <property name="maxWait" value="${maxWait}" />
+        <property name="validationQuery" value="${validationQuery}" />
+        <property name="testOnBorrow" value="${testOnBorrow}" />
+        <property name="testOnReturn" value="${testOnReturn}" />
+        <property name="testWhileIdle" value="${testWhileIdle}" />
+        <!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+        <property name="timeBetweenEvictionRunsMillis"
+                  value="${timeBetweenEvictionRunsMillis}" />
+        <!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+        <property name="minEvictableIdleTimeMillis"
+                  value="${minEvictableIdleTimeMillis}" />
+        <!-- 打开removeAbandoned功能 -->
+        <property name="removeAbandoned" value="${removeAbandoned}" />
+        <!-- 7200秒，也就是2小时 -->
+        <property name="removeAbandonedTimeout"
+                  value="${removeAbandonedTimeout}" />
+        <!-- 不关闭abanded连接时输出错误日志 -->
+        <property name="logAbandoned" value="${logAbandoned}" />
+        <!-- 监控数据库 -->
+        <property name="filters" value="${filters}" />
+    </bean>
+    <!-- postgresql数据源 -->
+    <bean name="postgresqlDS"
+          class="com.alibaba.druid.pool.DruidDataSource" init-method="init"
+          destroy-method="close">
+        <property name="url" value="${postgresql.url}" />
+        <property name="username" value="${postgresql.username}" />
+        <property name="password" value="${postgresql.password}" />
+        <!-- 初始化连接大小 -->
+        <property name="initialSize" value="${initialSize}" />
+        <!-- 连接池最大使用连接数量 -->
+        <property name="maxActive" value="${maxActive}" />
+        <!-- 连接池最小空闲 -->
+        <property name="minIdle" value="${minIdle}" />
+        <!-- 获取连接最大等待时间 -->
+        <property name="maxWait" value="${maxWait}" />
+        <property name="validationQuery" value="${validationQuery}" />
+        <property name="testOnBorrow" value="${testOnBorrow}" />
+        <property name="testOnReturn" value="${testOnReturn}" />
+        <property name="testWhileIdle" value="${testWhileIdle}" />
+        <!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+        <property name="timeBetweenEvictionRunsMillis"
+                  value="${timeBetweenEvictionRunsMillis}" />
+        <!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+        <property name="minEvictableIdleTimeMillis"
+                  value="${minEvictableIdleTimeMillis}" />
+        <!-- 打开removeAbandoned功能 -->
+        <property name="removeAbandoned" value="${removeAbandoned}" />
+        <!-- 7200秒，也就是2小时 -->
+        <property name="removeAbandonedTimeout"
+                  value="${removeAbandonedTimeout}" />
+        <!-- 不关闭abanded连接时输出错误日志 -->
+        <property name="logAbandoned" value="${logAbandoned}" />
+        <!-- 监控数据库 -->
+        <property name="filters" value="${filters}" />
+    </bean>
+
+	<!-- 配置SqlSessionFactory，org.mybatis.spring.SqlSessionFactoryBean是Mybatis社区开发用于整合Spring的bean,并同时设置mybatis配套的分页插件PageHelper -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean"
+	    p:dataSource-ref="dataSource">
+	    <!-- mybaytis配置文件，需要在mybtatis中做进一步设置时 -->
+	    <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <!-- mybatis-xml配置 -->
+        <property name="mapperLocations" value="classpath:mapper/**/*.xml"/>
+
+        <property name="databaseIdProvider" ref="databaseIdProvider" />
+        <!-- 传入PageHelper 分页插件 -->
+        <property name="plugins">
+            <array>
+                <!-- 传入插件的对象 -->
+                <!-- 最新版版本写法 -->
+                <bean class="com.github.pagehelper.PageInterceptor">
+                <!-- 4.1.6版本写法 -->
+                <!-- <bean class="com.github.pagehelper.PageHelper"> -->
+                    <property name="properties">
+                        <props>
+                            <!--数据库类型-->
+                            <!--<prop key="helperDialect">mysql</prop>-->
+                            <prop key="auto-dialect">true</prop>
+                            <prop key="auto-runtime-dialect">true</prop>
+                            <!--页码超出范围自动修正-->
+                            <prop key="reasonable">true</prop>
+                        </props>
+                    </property>
+                </bean>
+            </array>
+        </property>
+
+	    </bean>
+
+
+    <bean id="databaseIdProvider" class="org.apache.ibatis.mapping.VendorDatabaseIdProvider">
+        <property name="properties" ref="vendorProperties"/>
+    </bean>
+    <bean id="vendorProperties"
+          class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="properties">
+            <props>
+                <prop key="PostgreSQL">postgresql</prop>
+                <prop key="MySQL">mysql</prop>
+            </props>
+        </property>
+    </bean>
+
+	
+	<!-- JDBC事务管理器 -->
+	<bean id="transactionManager" 
+	class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+		 p:dataSource-ref="dataSource"/>
+	
+	<!-- 启用支持annotation注解方式事务管理 -->
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!-- spring-quartz config -->
+    <import resource="classpath:spring-quartz.xml"/>
+
+</beans>
